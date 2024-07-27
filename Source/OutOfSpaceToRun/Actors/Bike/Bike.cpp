@@ -4,10 +4,12 @@
 #include "OutOfSpaceToRun/Actors/Bike/Bike.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Camera/CameraComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include <Kismet/KismetMathLibrary.h>
 
 // Sets default values
 ABike::ABike()
@@ -23,9 +25,9 @@ ABike::ABike()
 	DefaultMovementSpeed = 50.0f;
 	MovementSpeedModifier = 1.0f;
 	PanSpeed = 5.0f;
-
+	
 	MainChassis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Main Chassis"));
-	MainChassis->AddToRoot();
+	MainChassis->SetupAttachment(GetCapsuleComponent());
 	Engine = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Engine"));
 	Engine->SetupAttachment(MainChassis);
 	HandleBars = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HandleBars"));
@@ -119,23 +121,45 @@ void ABike::ConstantForwardMovement()
 	{
 		bool IsMovingOnGround = MovementComponent->IsMovingOnGround();
 
+				
 		// TODO: Perhaps allow boosting while in air as well..
 		if (IsMovingOnGround)
 		{
 			// assumes that we can boost
 			if (IsBoosting && (Fuel > 0.0f))
 			{
-				MovementSpeedModifier = 1.f;
 				Fuel -= FuelBurnRate;
+				MovementSpeedModifier = 2.0f;
 				if (GEngine)
+				{
 					GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Fuel %f"), Fuel));
-
+					GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("SpeedModifier %f"), MovementSpeedModifier));
+				}
 			}
 			else
 			{
 				MovementSpeedModifier = 0.5f;
+				if (GEngine)
+					GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("SpeedModifier %f"), MovementSpeedModifier));
 			}
 		}
+
+
+
+		float Speed = DefaultMovementSpeed * MovementSpeedModifier;
+		auto MainChassisLocation = MainChassis->GetComponentLocation();
+		auto MainChassisRelativeRotation = MainChassis->GetRelativeRotation();
+		auto MainChassisRelativeScale3D = MainChassis->GetRelativeScale3D();
+		auto MainChassisTransform = MainChassis->GetComponentTransform();
+		FVector SpeedVec(Speed, 0, 0);
+		FVector NewDirVec = UKismetMathLibrary::TransformDirection(MainChassisTransform, SpeedVec);
+		SpeedVec = NewDirVec + MainChassisLocation;
+		//FTransform NewTransform(, );
+		FTransform NewTransform = UKismetMathLibrary::MakeTransform(SpeedVec, MainChassisRelativeRotation, MainChassisRelativeScale3D);
+		//AddMovementInput(MainChassis->GetForwardVector(), Speed);
+		FVector NewLocation = NewTransform.GetLocation();
+		//Continue with SetActorLocation using vector
+		SetActorLocation(NewLocation, true);
 	}
 }
 
@@ -153,11 +177,31 @@ void ABike::StopBoosting()
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Not Boosting"));
 }
 
+void ABike::Jump()
+{
+	Super::Jump();
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Jumping"));
+
+	//AddMovementInput(FVector::UpVector, 300.0f);
+}
+
+void ABike::StopJumping()
+{
+	Super::StopJumping();
+	
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Stop Jumping"));
+}
+
 // Called every frame
 void ABike::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	//ConstantForwardMovement();
+	if (IsAlive)
+	{
+		ConstantForwardMovement();
+	}
 
 }
 

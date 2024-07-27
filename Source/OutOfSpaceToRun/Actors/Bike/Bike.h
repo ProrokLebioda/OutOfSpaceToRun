@@ -122,6 +122,8 @@ protected:
 	void ConstantForwardMovement();
 	void StartBoosting();
 	void StopBoosting();
+	virtual void Jump() override;
+	virtual void StopJumping() override;
 
 public:	
 	// Called every frame
