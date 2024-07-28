@@ -5,11 +5,15 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/BoxComponent.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "Engine/TextureRenderTarget2D.h"
 #include "Camera/CameraComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include <Kismet/KismetMathLibrary.h>
+#include "OutOfSpaceToRun/Actors/Obstacles/Wall.h"
 
 // Sets default values
 ABike::ABike()
@@ -41,9 +45,17 @@ ABike::ABike()
 	Roof = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Roof"));
 	Roof->SetupAttachment(MainChassis);
 
+	// Used for most collisions
+	Box = CreateDefaultSubobject<UBoxComponent>(TEXT("Box"));
+	Box->SetupAttachment(MainChassis);
+	Box->OnComponentBeginOverlap.AddDynamic(this, &ABike::OnOverlap);
+	
 	//// Setup parameters in editor
-	//SpringArmMinimap = CreateDefaultSubobject<USpringArmComponent>(TEXT("Minimap Spring Arm"));
-	//SpringArmMinimap->SetupAttachment(MainChassis);
+	SpringArmMinimap = CreateDefaultSubobject<USpringArmComponent>(TEXT("Minimap Spring Arm"));
+	SpringArmMinimap->SetupAttachment(MainChassis);
+
+	Minimap = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("Minimap"));
+	Minimap->SetupAttachment(SpringArmMinimap);
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("Player Camera"));
 	CameraBoom->SetupAttachment(MainChassis);
@@ -57,7 +69,15 @@ void ABike::BeginPlay()
 {
 	Super::BeginPlay();
 	
-
+	// Move to a timer
+	MovementComponent = GetMovementComponent();
+	GetWorld()->GetTimerManager().SetTimer(
+		WallSpawnTimerHandle, // handle to cancel timer at a later time
+		this, // the owning object
+		&ABike::SpawnWall, // function to call on elapsed
+		0.2f, // float delay until elapsed
+		true); // looping?
+	
 
 }
 
@@ -67,9 +87,9 @@ void ABike::Turn(const FInputActionValue& Value)
 	if (!IsAlive)
 		return;
 	
-	TObjectPtr<UPawnMovementComponent> MovementComponent = GetMovementComponent();
-	if (!MovementComponent)
-		return;
+	//TObjectPtr<UPawnMovementComponent> MovementComponent = GetMovementComponent();
+	//if (!MovementComponent)
+	//	return;
 
 	if (!MovementComponent->IsMovingOnGround())
 		return;
@@ -91,9 +111,9 @@ void ABike::Pivot(const FInputActionValue& Value)
 	if (!IsAlive)
 		return;
 
-	TObjectPtr<UPawnMovementComponent> MovementComponent = GetMovementComponent();
-	if (!MovementComponent)
-		return;
+	//TObjectPtr<UPawnMovementComponent> MovementComponent = GetMovementComponent();
+	//if (!MovementComponent)
+	//	return;
 
 	if (!MovementComponent->IsMovingOnGround())
 		return;
@@ -116,7 +136,7 @@ void ABike::Pivot(const FInputActionValue& Value)
 
 void ABike::ConstantForwardMovement()
 {
-	TObjectPtr<UPawnMovementComponent> MovementComponent = GetMovementComponent();
+	//TObjectPtr<UPawnMovementComponent> MovementComponent = GetMovementComponent();
 	if (MovementComponent)
 	{
 		bool IsMovingOnGround = MovementComponent->IsMovingOnGround();
@@ -130,21 +150,12 @@ void ABike::ConstantForwardMovement()
 			{
 				Fuel -= FuelBurnRate;
 				MovementSpeedModifier = 2.0f;
-				if (GEngine)
-				{
-					GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Fuel %f"), Fuel));
-					GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("SpeedModifier %f"), MovementSpeedModifier));
-				}
 			}
 			else
 			{
 				MovementSpeedModifier = 0.5f;
-				if (GEngine)
-					GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("SpeedModifier %f"), MovementSpeedModifier));
 			}
 		}
-
-
 
 		float Speed = DefaultMovementSpeed * MovementSpeedModifier;
 		auto MainChassisLocation = MainChassis->GetComponentLocation();
@@ -177,8 +188,20 @@ void ABike::StopBoosting()
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Not Boosting"));
 }
 
+void ABike::SpawnWall()
+{
+	auto Location = MainChassis->GetComponentLocation();
+	const auto Rotation = MainChassis->GetComponentRotation();
+	FVector PositionOffset = MainChassis->GetForwardVector() * -10.f;
+	Location = Location + PositionOffset;
+
+	GetWorld()->SpawnActor<AActor>(WallToSpawn, Location, Rotation);
+}
+
 void ABike::Jump()
 {
+	if (!IsAlive)
+		return;
 	Super::Jump();
 	if (GEngine)
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Jumping"));
@@ -194,6 +217,18 @@ void ABike::StopJumping()
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Stop Jumping"));
 }
 
+void ABike::OnOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	AWall* Wall = Cast<AWall>(OtherActor);
+	if (Wall)
+	{
+		MovementComponent->StopMovementImmediately();
+		IsAlive = false;
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Overlapp Begin - Wall"));
+	}
+}
+
 // Called every frame
 void ABike::Tick(float DeltaTime)
 {
@@ -201,6 +236,7 @@ void ABike::Tick(float DeltaTime)
 	if (IsAlive)
 	{
 		ConstantForwardMovement();
+
 	}
 
 }

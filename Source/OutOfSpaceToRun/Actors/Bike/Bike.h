@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Styling/SlateBrush.h"
 #include "GameFramework/Character.h"
 #include "Bike.generated.h"
 
@@ -13,7 +14,13 @@ class UInputAction;
 class UStaticMeshComponent;
 class USkeletalMeshComponent;
 class UArrowComponent;
+class UBoxComponent;
+class UPawnMovementComponent;
+class USceneCaptureComponent2D;
+class UTextureRenderTarget2D;
+class AWall;
 struct FInputActionValue;
+struct FSlateBrush;
 
 UCLASS()
 class OUTOFSPACETORUN_API ABike : public ACharacter
@@ -26,6 +33,9 @@ class OUTOFSPACETORUN_API ABike : public ACharacter
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* SpringArmMinimap;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	USceneCaptureComponent2D* Minimap;
 
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -51,13 +61,17 @@ class OUTOFSPACETORUN_API ABike : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* BoostAction;
 
+	
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UTextureRenderTarget2D* MinimapTexture;
 protected:
 
 	// This one is taken from BP I've used previously, don't recall why
 	UPROPERTY(EditAnywhere)
 	USkeletalMeshComponent* CharacterMesh;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UStaticMeshComponent* MainChassis;
 
 	UPROPERTY(EditAnywhere)
@@ -81,6 +95,11 @@ protected:
 	UPROPERTY(EditAnywhere)
 	UArrowComponent* Arrow;
 
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Box;
+
+	UPROPERTY(VisibleAnywhere)
+	UPawnMovementComponent* MovementComponent;
 
 	// TODO: Move to component later??
 	UPROPERTY(EditAnywhere, Category = "Movement")
@@ -95,18 +114,23 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "State")
 	bool IsBoosting;
 
-	UPROPERTY(EditAnywhere, Category = "VectorsRotators")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VectorsRotators")
 	FVector PreviousPosition;
-	UPROPERTY(EditAnywhere, Category = "VectorsRotators")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VectorsRotators")
 	FVector PreviousForwardVector;
-	UPROPERTY(EditAnywhere, Category = "VectorsRotators")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VectorsRotators")
 	FRotator RelativeRotation;
 
-	UPROPERTY(EditAnywhere, Category = "Mechanics")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mechanics")
 	float Fuel;
-	UPROPERTY(EditAnywhere, Category = "Mechanics")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mechanics")
 	float FuelBurnRate;
 
+	FTimerHandle WallSpawnTimerHandle;
+
+	// TODO: Had to uncomment in build file "Slate", perhaps there is a better way to paint Minimap, take a look later
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	FSlateBrush MinimapBrush;
 public:
 	// Sets default values for this character's properties
 	ABike();
@@ -122,9 +146,15 @@ protected:
 	void ConstantForwardMovement();
 	void StartBoosting();
 	void StopBoosting();
+	void SpawnWall();
 	virtual void Jump() override;
 	virtual void StopJumping() override;
 
+	UFUNCTION()
+	void OnOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+private:
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<AWall> WallToSpawn;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
