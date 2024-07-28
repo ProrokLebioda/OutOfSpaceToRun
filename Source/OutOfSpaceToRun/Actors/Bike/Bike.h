@@ -149,6 +149,7 @@ protected:
 	void SpawnWall();
 	virtual void Jump() override;
 	virtual void StopJumping() override;
+	virtual void PossessedBy(AController* NewController);
 
 	UFUNCTION()
 	void OnOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

@@ -14,6 +14,7 @@
 #include "InputActionValue.h"
 #include <Kismet/KismetMathLibrary.h>
 #include "OutOfSpaceToRun/Actors/Obstacles/Wall.h"
+#include "OutOfSpaceToRun/Actors/Controllers/BikePlayerController.h"
 
 // Sets default values
 ABike::ABike()
@@ -136,11 +137,9 @@ void ABike::Pivot(const FInputActionValue& Value)
 
 void ABike::ConstantForwardMovement()
 {
-	//TObjectPtr<UPawnMovementComponent> MovementComponent = GetMovementComponent();
 	if (MovementComponent)
 	{
 		bool IsMovingOnGround = MovementComponent->IsMovingOnGround();
-
 				
 		// TODO: Perhaps allow boosting while in air as well..
 		if (IsMovingOnGround)
@@ -227,6 +226,21 @@ void ABike::OnOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* O
 		if (GEngine)
 			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Overlapp Begin - Wall"));
 	}
+}
+
+void ABike::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	if (APawn* Pawn = NewController->GetPawn())
+	{
+		if (ABikePlayerController* BikeController = Cast< ABikePlayerController>(GetController()))
+		{
+			int32 ControllerId = BikeController->GetLocalPlayer()->GetControllerId();
+			if (GEngine)
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Player Controller ID: %i"), ControllerId));
+		}
+	}
+		
 }
 
 // Called every frame
