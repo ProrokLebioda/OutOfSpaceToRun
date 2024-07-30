@@ -108,7 +108,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float PanSpeed;
 
-	UPROPERTY(EditAnywhere, Category = "State")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
 	bool IsAlive;
 	UPROPERTY(EditAnywhere, Category = "State")
 	bool IsBoosting;
