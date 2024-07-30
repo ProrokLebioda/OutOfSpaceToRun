@@ -113,13 +113,6 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "State")
 	bool IsBoosting;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VectorsRotators")
-	FVector PreviousPosition;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VectorsRotators")
-	FVector PreviousForwardVector;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VectorsRotators")
-	FRotator RelativeRotation;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mechanics")
 	float Fuel;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mechanics")
