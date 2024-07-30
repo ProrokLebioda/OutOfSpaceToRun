@@ -204,8 +204,6 @@ void ABike::Jump()
 	Super::Jump();
 	if (GEngine)
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Jumping"));
-
-	//AddMovementInput(FVector::UpVector, 300.0f);
 }
 
 void ABike::StopJumping()

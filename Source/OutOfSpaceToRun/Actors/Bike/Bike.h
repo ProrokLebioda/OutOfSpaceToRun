@@ -63,8 +63,7 @@ class OUTOFSPACETORUN_API ABike : public ACharacter
 
 	
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UTextureRenderTarget2D* MinimapTexture;
+
 protected:
 
 	// This one is taken from BP I've used previously, don't recall why
@@ -129,8 +128,11 @@ protected:
 	FTimerHandle WallSpawnTimerHandle;
 
 	// TODO: Had to uncomment in build file "Slate", perhaps there is a better way to paint Minimap, take a look later
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	FSlateBrush MinimapBrush;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UTextureRenderTarget2D* MinimapTexture;
 public:
 	// Sets default values for this character's properties
 	ABike();
