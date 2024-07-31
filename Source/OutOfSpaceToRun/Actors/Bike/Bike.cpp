@@ -23,7 +23,9 @@ ABike::ABike()
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Defaults
-	Fuel = 100.0f;
+
+	MaxFuel = 100.0f;
+	CurrentFuel = MaxFuel;
 	FuelBurnRate = 1.0f;
 	IsAlive = true;
 	IsBoosting = false;
@@ -32,6 +34,8 @@ ABike::ABike()
 	PanSpeed = 5.0f;
 	DistanceTravelled = 0.0f;
 	SpawnWallDistanceThreshold = 20.0f;
+	BoostRestoreTimeInterval = 0.2f;
+	FuelRestoreValue = 1.0f;
 	
 	
 	MainChassis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Main Chassis"));
@@ -153,9 +157,9 @@ void ABike::ConstantForwardMovement()
 		if (IsMovingOnGround)
 		{
 			// assumes that we can boost
-			if (IsBoosting && (Fuel > 0.0f))
+			if (IsBoosting && (CurrentFuel > 0.0f))
 			{
-				Fuel -= FuelBurnRate;
+				CurrentFuel -= FuelBurnRate;
 				MovementSpeedModifier = 2.0f;
 			}
 			else
@@ -184,6 +188,11 @@ void ABike::ConstantForwardMovement()
 void ABike::StartBoosting()
 {
 	IsBoosting = true;
+	if (BoostRestoreTimerHandle.IsValid())
+	{
+		BoostRestoreTimerHandle.Invalidate();
+	}
+
 	if (GEngine)
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Is Boosting"));
 }
@@ -191,6 +200,16 @@ void ABike::StartBoosting()
 void ABike::StopBoosting()
 {
 	IsBoosting = false;
+	if (!BoostRestoreTimerHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().SetTimer(
+			BoostRestoreTimerHandle, // handle to cancel timer at a later time
+			this, // the owning object
+			&ABike::RestoreFuel, // function to call on elapsed
+			BoostRestoreTimeInterval, // float delay until elapsed
+			true); // looping?
+	}
+
 	if (GEngine)
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Not Boosting"));
 }
@@ -271,6 +290,18 @@ void ABike::Tick(float DeltaTime)
 		PreviousPosition = CurrentPosition;
 	}
 
+}
+
+void ABike::RestoreFuel()
+{
+	CurrentFuel += FuelRestoreValue;
+	if (CurrentFuel >= MaxFuel)
+	{
+		if (BoostRestoreTimerHandle.IsValid())
+		{
+			BoostRestoreTimerHandle.Invalidate();
+		}
+	}
 }
 
 // Called to bind functionality to input

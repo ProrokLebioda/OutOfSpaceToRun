@@ -114,11 +114,25 @@ protected:
 	bool IsBoosting;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mechanics")
-	float Fuel;
+	float CurrentFuel;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mechanics")
+	float MaxFuel;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mechanics")
 	float FuelBurnRate;
 
+	UPROPERTY()
 	FTimerHandle WallSpawnTimerHandle;
+
+	UPROPERTY()
+	FTimerHandle BoostRestoreTimerHandle;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float BoostRestoreTimeInterval;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FuelRestoreValue;
 
 	// TODO: Had to uncomment in build file "Slate", perhaps there is a better way to paint Minimap, take a look later
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -145,6 +159,7 @@ protected:
 	void StartBoosting();
 	void StopBoosting();
 	void SpawnWall();
+	void RestoreFuel();
 	virtual void Jump() override;
 	virtual void StopJumping() override;
 	virtual void PossessedBy(AController* NewController);
