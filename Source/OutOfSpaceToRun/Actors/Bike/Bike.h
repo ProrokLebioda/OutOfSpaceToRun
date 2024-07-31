@@ -126,6 +126,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UTextureRenderTarget2D* MinimapTexture;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	float SpawnWallDistanceThreshold;
 public:
 	// Sets default values for this character's properties
 	ABike();
@@ -147,10 +150,16 @@ protected:
 	virtual void PossessedBy(AController* NewController);
 
 	UFUNCTION()
-	void OnOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	void OnBoxOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 private:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<AWall> WallToSpawn;
+
+	UPROPERTY(EditAnywhere)
+	float DistanceTravelled;
+
+	UPROPERTY(EditAnywhere)
+	FVector PreviousPosition;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

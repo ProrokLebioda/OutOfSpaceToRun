@@ -30,6 +30,9 @@ ABike::ABike()
 	DefaultMovementSpeed = 50.0f;
 	MovementSpeedModifier = 1.0f;
 	PanSpeed = 5.0f;
+	DistanceTravelled = 0.0f;
+	SpawnWallDistanceThreshold = 20.0f;
+	
 	
 	MainChassis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Main Chassis"));
 	MainChassis->SetupAttachment(GetCapsuleComponent());
@@ -49,7 +52,7 @@ ABike::ABike()
 	// Used for most collisions
 	Box = CreateDefaultSubobject<UBoxComponent>(TEXT("Box"));
 	Box->SetupAttachment(MainChassis);
-	Box->OnComponentBeginOverlap.AddDynamic(this, &ABike::OnOverlap);
+	Box->OnComponentBeginOverlap.AddDynamic(this, &ABike::OnBoxOverlap);
 	
 	//// Setup parameters in editor
 	SpringArmMinimap = CreateDefaultSubobject<USpringArmComponent>(TEXT("Minimap Spring Arm"));
@@ -72,13 +75,18 @@ void ABike::BeginPlay()
 	
 	// Move to a timer
 	MovementComponent = GetMovementComponent();
-	GetWorld()->GetTimerManager().SetTimer(
-		WallSpawnTimerHandle, // handle to cancel timer at a later time
-		this, // the owning object
-		&ABike::SpawnWall, // function to call on elapsed
-		0.2f, // float delay until elapsed
-		true); // looping?
 	
+	// TODO: Commented out in favor of solution that checks distance travelled
+	// Start timer spawning wall
+	//GetWorld()->GetTimerManager().SetTimer(
+	//	WallSpawnTimerHandle, // handle to cancel timer at a later time
+	//	this, // the owning object
+	//	&ABike::SpawnWall, // function to call on elapsed
+	//	0.2f, // float delay until elapsed
+	//	true); // looping?
+	
+
+	PreviousPosition = GetActorLocation();
 
 }
 
@@ -214,12 +222,13 @@ void ABike::StopJumping()
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Stop Jumping"));
 }
 
-void ABike::OnOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ABike::OnBoxOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	AWall* Wall = Cast<AWall>(OtherActor);
 	if (Wall)
 	{
 		MovementComponent->StopMovementImmediately();
+		MovementComponent->SetActive(false);
 		IsAlive = false;
 		if (GEngine)
 			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Overlapp Begin - Wall"));
@@ -249,6 +258,17 @@ void ABike::Tick(float DeltaTime)
 	{
 		ConstantForwardMovement();
 
+		FVector CurrentPosition = GetActorLocation();
+		// Spawn a wall if current distance travelled threshold is exceeded, then reset threshold
+		float Distance = FVector::Dist(PreviousPosition, CurrentPosition);
+		DistanceTravelled += Distance;
+		if (DistanceTravelled >= SpawnWallDistanceThreshold)
+		{
+			SpawnWall();
+			DistanceTravelled = 0.0f;
+		}
+
+		PreviousPosition = CurrentPosition;
 	}
 
 }
