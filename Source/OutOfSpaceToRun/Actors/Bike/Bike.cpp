@@ -14,6 +14,7 @@
 #include "InputActionValue.h"
 #include <Kismet/KismetMathLibrary.h>
 #include "OutOfSpaceToRun/Actors/Obstacles/Wall.h"
+#include "OutOfSpaceToRun/Actors/Zones/ShrinkingSphere.h"
 #include "OutOfSpaceToRun/Actors/Controllers/BikePlayerController.h"
 
 // Sets default values
@@ -56,8 +57,9 @@ ABike::ABike()
 	// Used for most collisions
 	Box = CreateDefaultSubobject<UBoxComponent>(TEXT("Box"));
 	Box->SetupAttachment(MainChassis);
-	Box->OnComponentBeginOverlap.AddDynamic(this, &ABike::OnBoxOverlap);
-	
+	Box->OnComponentBeginOverlap.AddDynamic(this, &ABike::OnBoxBeginOverlap);
+	Box->OnComponentEndOverlap.AddDynamic(this, &ABike::OnBoxEndOverlap);
+
 	//// Setup parameters in editor
 	SpringArmMinimap = CreateDefaultSubobject<USpringArmComponent>(TEXT("Minimap Spring Arm"));
 	SpringArmMinimap->SetupAttachment(MainChassis);
@@ -241,7 +243,7 @@ void ABike::StopJumping()
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Stop Jumping"));
 }
 
-void ABike::OnBoxOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ABike::OnBoxBeginOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	AWall* Wall = Cast<AWall>(OtherActor);
 	if (Wall)
@@ -333,5 +335,19 @@ void ABike::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		// Pivoting, this gives ability to swerve, not just simply turn by 90 degrees
 		EnhancedInputComponent->BindAction(PivotAction, ETriggerEvent::Triggered, this, &ABike::Pivot);
 	}
+}
+
+void ABike::OnBoxEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	AShrinkingSphere* ShrinkingSphere = Cast<AShrinkingSphere>(OtherActor);
+	if (ShrinkingSphere)
+	{
+		MovementComponent->StopMovementImmediately();
+		MovementComponent->SetActive(false);
+		IsAlive = false;
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Overlapp End - Shrinking Sphere"));
+	}
+
 }
 
