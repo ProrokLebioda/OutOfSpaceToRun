@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/PlayerController.h"
+#include "OutOfSpaceToRun/CustomGravity/GravityController.h"
 #include "BikePlayerController.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class OUTOFSPACETORUN_API ABikePlayerController : public APlayerController
+class OUTOFSPACETORUN_API ABikePlayerController : public AGravityController
 {
 	GENERATED_BODY()
 	

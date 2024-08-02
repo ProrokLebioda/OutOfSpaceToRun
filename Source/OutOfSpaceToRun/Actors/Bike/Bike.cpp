@@ -220,7 +220,7 @@ void ABike::SpawnWall()
 {
 	auto Location = MainChassis->GetComponentLocation();
 	const auto Rotation = MainChassis->GetComponentRotation();
-	FVector PositionOffset = MainChassis->GetForwardVector() * -10.f;
+	FVector PositionOffset = MainChassis->GetForwardVector() * -150.f;
 	Location = Location + PositionOffset;
 
 	GetWorld()->SpawnActor<AActor>(WallToSpawn, Location, Rotation);

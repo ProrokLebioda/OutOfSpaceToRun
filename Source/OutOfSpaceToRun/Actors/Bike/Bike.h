@@ -4,7 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Styling/SlateBrush.h"
-#include "GameFramework/Character.h"
+//#include "GameFramework/Character.h"
+#include "OutOfSpaceToRun/CustomGravity/GravityCharacter.h"
 #include "Bike.generated.h"
 
 class USpringArmComponent;
@@ -23,7 +24,7 @@ struct FInputActionValue;
 struct FSlateBrush;
 
 UCLASS()
-class OUTOFSPACETORUN_API ABike : public ACharacter
+class OUTOFSPACETORUN_API ABike : public AGravityCharacter
 {
 	GENERATED_BODY()
 
