@@ -16,8 +16,6 @@ UCLASS()
 class OUTOFSPACETORUN_API UUI_Minimap : public UUserWidget
 {
 	GENERATED_BODY()
-protected:
-	virtual void NativeConstruct() override;
 
 public:
 	// TODO: Had to uncomment in build file "Slate", perhaps there is a better way to paint Minimap, take a look later

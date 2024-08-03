@@ -182,5 +182,9 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
+	
+	UFUNCTION()
+	inline float GetCurrentFuel() { return CurrentFuel; }
+	UFUNCTION()
+	inline float GetMaxFuel() { return MaxFuel; }
 };

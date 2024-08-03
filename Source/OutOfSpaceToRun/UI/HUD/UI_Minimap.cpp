@@ -5,11 +5,6 @@
 #include "Components/Image.h"
 #include "UI_Minimap.h"
 
-void UUI_Minimap::NativeConstruct()
-{
-	Super::NativeConstruct();
-}
-
 FSlateBrush UUI_Minimap::GetMinimapImageBrush()
 {
 	return BrushMinimapMaterial;
