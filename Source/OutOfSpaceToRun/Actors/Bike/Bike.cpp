@@ -102,8 +102,14 @@ void ABike::SpawnUpdateWall(bool IsNewPoint /*= false*/)
 	{
 		DynamicWallInstance = GetWorld()->SpawnActor<ASplineWall>(WallToSpawn, Location, Rotation);
 	}
+	FTransform Transform = GetTransform();
+	
 
-	DynamicWallInstance->UpdateSplinePoint(GetActorTransform(), IsNewPoint);
+
+
+	Transform.SetLocation(Location);
+
+	DynamicWallInstance->UpdateSplinePoint(Transform, IsNewPoint);
 
 }
 

@@ -73,7 +73,7 @@ void ASplineWall::UpdateSplinePoint(const FTransform& Transform, bool IsNewPoint
 	if (IsNewPoint)
 	{
 		//AddPoint
-		Spline->AddSplinePointAtIndex(Transform.GetLocation(), SplinePointsCount, ESplineCoordinateSpace::Local);
+		Spline->AddSplinePointAtIndex(Transform.GetLocation(), SplinePointsCount, ESplineCoordinateSpace::World);
 		SplineMesh = NewObject<USplineMeshComponent>(this, USplineMeshComponent::StaticClass());
 		if (SplineMesh)
 		{
@@ -101,7 +101,7 @@ void ASplineWall::UpdateSplinePoint(const FTransform& Transform, bool IsNewPoint
 		if (SplinePointsCount < 2)
 			return;
 		// Otherwise take last point and update its position
-		FSplinePoint SplinePoint = Spline->GetSplinePointAt(SplinePointsCount - 1, ESplineCoordinateSpace::Local);
+		FSplinePoint SplinePoint = Spline->GetSplinePointAt(SplinePointsCount - 1, ESplineCoordinateSpace::World);
 		FVector StartPosition;
 		FVector StartTangent;
 		FVector EndPosition;
@@ -109,9 +109,9 @@ void ASplineWall::UpdateSplinePoint(const FTransform& Transform, bool IsNewPoint
 		Spline->GetLocalLocationAndTangentAtSplinePoint(SplinePointsCount - 2, StartPosition, StartTangent);
 		Spline->GetLocalLocationAndTangentAtSplinePoint(SplinePointsCount - 1, EndPosition, EndTangent);
 
-		FSplinePoint PreviousSplinePoint = Spline->GetSplinePointAt(SplinePointsCount - 1, ESplineCoordinateSpace::Local);
+		FSplinePoint PreviousSplinePoint = Spline->GetSplinePointAt(SplinePointsCount - 1, ESplineCoordinateSpace::World);
 		SplinePoint.Position = Transform.GetLocation();
-		Spline->SetLocationAtSplinePoint(SplinePointsCount - 1, Transform.GetLocation(), ESplineCoordinateSpace::Local);
+		Spline->SetLocationAtSplinePoint(SplinePointsCount - 1, Transform.GetLocation(), ESplineCoordinateSpace::World);
 		SplineMesh->SetStartAndEnd(StartPosition, StartTangent, EndPosition, EndTangent);
 	}
 }
