@@ -17,6 +17,8 @@
 #include "OutOfSpaceToRun/Actors/Zones/ShrinkingSphere.h"
 #include "OutOfSpaceToRun/Actors/Controllers/BikePlayerController.h"
 
+#include "OutOfSpaceToRun/Actors/Obstacles/SplineWall.h"
+
 // Sets default values
 ABike::ABike()
 {
@@ -34,10 +36,10 @@ ABike::ABike()
 	MovementSpeedModifier = 1.0f;
 	PanSpeed = 5.0f;
 	DistanceTravelled = 0.0f;
-	SpawnWallDistanceThreshold = 20.0f;
+	SpawnWallDistanceThreshold = 10.0f;
 	BoostRestoreTimeInterval = 0.2f;
 	FuelRestoreValue = 1.0f;
-	
+	WallScale = 1.f;
 	
 	MainChassis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Main Chassis"));
 	MainChassis->SetupAttachment(GetCapsuleComponent());
@@ -72,6 +74,8 @@ ABike::ABike()
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Follow Camera"));
 	FollowCamera->SetupAttachment(CameraBoom);
+
+	
 }
 
 // Called when the game starts or when spawned
@@ -80,19 +84,26 @@ void ABike::BeginPlay()
 	Super::BeginPlay();
 	
 	// Move to a timer
-	MovementComponent = GetMovementComponent();
-	
-	// TODO: Commented out in favor of solution that checks distance travelled
-	// Start timer spawning wall
-	//GetWorld()->GetTimerManager().SetTimer(
-	//	WallSpawnTimerHandle, // handle to cancel timer at a later time
-	//	this, // the owning object
-	//	&ABike::SpawnWall, // function to call on elapsed
-	//	0.2f, // float delay until elapsed
-	//	true); // looping?
-	
+	MovementComponent = GetMovementComponent();	
 
 	PreviousPosition = GetActorLocation();
+
+	SpawnUpdateWall();
+}
+
+void ABike::SpawnUpdateWall(bool IsNewPoint /*= false*/)
+{
+	auto Location = MainChassis->GetComponentLocation();
+	const auto Rotation = MainChassis->GetComponentRotation();
+	FVector PositionOffset = MainChassis->GetForwardVector() * -150.f;
+	Location = Location + PositionOffset;
+
+	if (!DynamicWallInstance)
+	{
+		DynamicWallInstance = GetWorld()->SpawnActor<ASplineWall>(WallToSpawn, Location, Rotation);
+	}
+
+	DynamicWallInstance->UpdateSplinePoint(GetActorTransform(), IsNewPoint);
 
 }
 
@@ -101,13 +112,12 @@ void ABike::Turn(const FInputActionValue& Value)
 {
 	if (!IsAlive)
 		return;
-	
-	//TObjectPtr<UPawnMovementComponent> MovementComponent = GetMovementComponent();
-	//if (!MovementComponent)
-	//	return;
 
 	if (!MovementComponent->IsMovingOnGround())
 		return;
+
+	SpawnUpdateWall(true);
+
 	float Val = Value.Get<float>();
 	auto MainChassisRotation = MainChassis->GetComponentRotation();
 	float OrigYaw = MainChassisRotation.Yaw;
@@ -118,7 +128,6 @@ void ABike::Turn(const FInputActionValue& Value)
 
 	FRotator NewRotation( MainChassisRotation.Pitch, NewYaw, MainChassisRotation.Roll);
 	MainChassis->SetWorldRotation(NewRotation);
-	
 }
 
 void ABike::Pivot(const FInputActionValue& Value)
@@ -126,12 +135,10 @@ void ABike::Pivot(const FInputActionValue& Value)
 	if (!IsAlive)
 		return;
 
-	//TObjectPtr<UPawnMovementComponent> MovementComponent = GetMovementComponent();
-	//if (!MovementComponent)
-	//	return;
-
 	if (!MovementComponent->IsMovingOnGround())
 		return;
+
+	SpawnUpdateWall(true);
 
 	float Val = Value.Get<float>();
 
@@ -216,36 +223,30 @@ void ABike::StopBoosting()
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Not Boosting"));
 }
 
-void ABike::SpawnWall()
-{
-	auto Location = MainChassis->GetComponentLocation();
-	const auto Rotation = MainChassis->GetComponentRotation();
-	FVector PositionOffset = MainChassis->GetForwardVector() * -150.f;
-	Location = Location + PositionOffset;
-
-	GetWorld()->SpawnActor<AActor>(WallToSpawn, Location, Rotation);
-}
-
 void ABike::Jump()
 {
 	if (!IsAlive)
 		return;
+
+	SpawnUpdateWall();
 	Super::Jump();
+
 	if (GEngine)
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Jumping"));
 }
 
 void ABike::StopJumping()
 {
+	SpawnUpdateWall();
 	Super::StopJumping();
-	
+
 	if (GEngine)
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Stop Jumping"));
 }
 
 void ABike::OnBoxBeginOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	AWall* Wall = Cast<AWall>(OtherActor);
+	ASplineWall* Wall = Cast<ASplineWall>(OtherActor);
 	if (Wall)
 	{
 		MovementComponent->StopMovementImmediately();
@@ -285,7 +286,14 @@ void ABike::Tick(float DeltaTime)
 		DistanceTravelled += Distance;
 		if (DistanceTravelled >= SpawnWallDistanceThreshold)
 		{
-			SpawnWall();
+			if (!MovementComponent->IsMovingOnGround())
+			{
+				SpawnUpdateWall(true);
+			}
+			else
+			{
+				SpawnUpdateWall(false);
+			}
 			DistanceTravelled = 0.0f;
 		}
 

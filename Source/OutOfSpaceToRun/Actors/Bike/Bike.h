@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Styling/SlateBrush.h"
-//#include "GameFramework/Character.h"
 #include "OutOfSpaceToRun/CustomGravity/GravityCharacter.h"
 #include "Bike.generated.h"
 
@@ -19,7 +18,7 @@ class UBoxComponent;
 class UPawnMovementComponent;
 class USceneCaptureComponent2D;
 class UTextureRenderTarget2D;
-class AWall;
+class ASplineWall;
 struct FInputActionValue;
 struct FSlateBrush;
 
@@ -141,6 +140,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	float SpawnWallDistanceThreshold;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	float WallScale;
+
 public:
 	// Sets default values for this character's properties
 	ABike();
@@ -148,17 +151,23 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	void SpawnUpdateWall(bool IsNewPoint = false);
+
 	/** Called for turn input */
+	UFUNCTION(BlueprintCallable)
 	void Turn(const FInputActionValue& Value);
 	/** Called for pivot input */
+	UFUNCTION(BlueprintCallable)
 	void Pivot(const FInputActionValue& Value);
 
 	void ConstantForwardMovement();
 	void StartBoosting();
 	void StopBoosting();
-	void SpawnWall();
 	void RestoreFuel();
+	
 	virtual void Jump() override;
+	
 	virtual void StopJumping() override;
 	virtual void PossessedBy(AController* NewController);
 
@@ -169,7 +178,10 @@ protected:
 	void OnBoxEndOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 private:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<AWall> WallToSpawn;
+	TSubclassOf<ASplineWall> WallToSpawn;
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	ASplineWall* DynamicWallInstance;
 
 	UPROPERTY(EditAnywhere)
 	float DistanceTravelled;
