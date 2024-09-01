@@ -19,6 +19,8 @@ public:
 
 	void OnConstruction(const FTransform& Transform) override;
 
+	void UpdateSplineComponent();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -27,6 +29,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	void AddSplinePoint(const FVector& Location);
+	void UpdateLastSplinePoint(const FVector& Location);
 public:
 	UPROPERTY(VisibleAnywhere, Category = "Spline")
 	USplineComponent* SplineComponent;
@@ -42,4 +46,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spline")
 	class UMaterialInterface* AlternativeMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	TArray<USplineMeshComponent*> SplineMeshesArray;
 };

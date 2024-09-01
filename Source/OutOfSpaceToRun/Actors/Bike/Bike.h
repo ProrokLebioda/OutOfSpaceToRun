@@ -19,6 +19,7 @@ class UPawnMovementComponent;
 class USceneCaptureComponent2D;
 class UTextureRenderTarget2D;
 class ASplineWall;
+class ASplineWall;
 struct FInputActionValue;
 struct FSlateBrush;
 

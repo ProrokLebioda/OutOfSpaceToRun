@@ -2,8 +2,6 @@
 
 #include "SplineActor.h"
 
-
-
 // Sets default values
 ASplineActor::ASplineActor()
 {
@@ -19,6 +17,24 @@ ASplineActor::ASplineActor()
 
 void ASplineActor::OnConstruction(const FTransform& Transform)
 {
+	Super::OnConstruction(Transform);
+	bool retFlag;
+	UpdateSplineComponent(retFlag);
+	if (retFlag) return;
+}
+
+void ASplineActor::UpdateSplineComponent()
+{
+	for (USplineMeshComponent* SplineMesh2 : SplineMeshesArray)
+	{
+		if (SplineMesh2)
+		{
+			SplineMesh2->DestroyComponent();
+		}
+	}
+
+	SplineMeshesArray.Empty();
+
 	if (!Mesh)
 	{
 		return;
@@ -27,6 +43,8 @@ void ASplineActor::OnConstruction(const FTransform& Transform)
 	for (int SplineCount = 0; SplineCount < (SplineComponent->GetNumberOfSplinePoints()) - 1; SplineCount++)
 	{
 		USplineMeshComponent* SplineMeshComponent = NewObject<USplineMeshComponent>(this, USplineMeshComponent::StaticClass());
+
+		SplineMeshesArray.Add(SplineMeshComponent);
 
 		SplineMeshComponent->SetStaticMesh(Mesh);
 		SplineMeshComponent->SetMobility(EComponentMobility::Movable);
@@ -60,7 +78,6 @@ void ASplineActor::OnConstruction(const FTransform& Transform)
 void ASplineActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
@@ -68,5 +85,24 @@ void ASplineActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void ASplineActor::AddSplinePoint(const FVector& Location)
+{
+	int32 LastSplineIndex = SplineComponent->GetNumberOfSplinePoints() - 1;
+
+	SplineComponent->AddSplinePointAtIndex(Location, LastSplineIndex + 1, ESplineCoordinateSpace::Local, true);
+	UpdateSplineComponent();
+}
+
+void ASplineActor::UpdateLastSplinePoint(const FVector& Location)
+{
+	int32 LastSplineIndex = SplineComponent->GetNumberOfSplinePoints() - 1;
+
+	FSplinePoint SplinePoint = SplineComponent->GetSplinePointAt(LastSplineIndex, ESplineCoordinateSpace::Local);
+
+	SplinePoint.Position = Location;
+	
+	UpdateSplineComponent();
 }
 
