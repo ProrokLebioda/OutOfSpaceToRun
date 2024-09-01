@@ -18,8 +18,8 @@ class UBoxComponent;
 class UPawnMovementComponent;
 class USceneCaptureComponent2D;
 class UTextureRenderTarget2D;
-class ASplineWall;
-class ASplineWall;
+//class ASplineWall;
+class ASplineActor;
 struct FInputActionValue;
 struct FSlateBrush;
 
@@ -179,10 +179,10 @@ protected:
 	void OnBoxEndOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 private:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<ASplineWall> WallToSpawn;
+	TSubclassOf<ASplineActor> WallToSpawn;
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-	ASplineWall* DynamicWallInstance;
+	ASplineActor* DynamicWallInstance;
 
 	UPROPERTY(EditAnywhere)
 	float DistanceTravelled;

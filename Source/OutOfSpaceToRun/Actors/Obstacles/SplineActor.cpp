@@ -18,9 +18,7 @@ ASplineActor::ASplineActor()
 void ASplineActor::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-	bool retFlag;
-	UpdateSplineComponent(retFlag);
-	if (retFlag) return;
+	UpdateSplineComponent();
 }
 
 void ASplineActor::UpdateSplineComponent()
@@ -62,15 +60,17 @@ void ASplineActor::UpdateSplineComponent()
 		SplineMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
 		SplineMeshComponent->SetForwardAxis(ForwardAxis);
+		
 
-		if (AlternativeMaterial && SplineCount > 0 && SplineCount % 2 == 0)
-		{
-			SplineMeshComponent->SetMaterial(0, AlternativeMaterial);
-		}
-		else if (DefaultMaterial)
-		{
-			SplineMeshComponent->SetMaterial(0, DefaultMaterial);
-		}
+		// TODO_Spline: Uncomment when need for 2 material arises
+		//if (AlternativeMaterial && SplineCount > 0 && SplineCount % 2 == 0)
+		//{
+		//	SplineMeshComponent->SetMaterial(0, AlternativeMaterial);
+		//}
+		//else if (DefaultMaterial)
+		//{
+		//	SplineMeshComponent->SetMaterial(0, DefaultMaterial);
+		//}
 	}
 }
 
@@ -91,7 +91,7 @@ void ASplineActor::AddSplinePoint(const FVector& Location)
 {
 	int32 LastSplineIndex = SplineComponent->GetNumberOfSplinePoints() - 1;
 
-	SplineComponent->AddSplinePointAtIndex(Location, LastSplineIndex + 1, ESplineCoordinateSpace::Local, true);
+	SplineComponent->AddSplinePointAtIndex(Location, LastSplineIndex + 1, ESplineCoordinateSpace::World, true);
 	UpdateSplineComponent();
 }
 
@@ -99,10 +99,10 @@ void ASplineActor::UpdateLastSplinePoint(const FVector& Location)
 {
 	int32 LastSplineIndex = SplineComponent->GetNumberOfSplinePoints() - 1;
 
-	FSplinePoint SplinePoint = SplineComponent->GetSplinePointAt(LastSplineIndex, ESplineCoordinateSpace::Local);
+	FSplinePoint SplinePoint = SplineComponent->GetSplinePointAt(LastSplineIndex, ESplineCoordinateSpace::World);
 
 	SplinePoint.Position = Location;
-	
+	SplineComponent->SetLocationAtSplinePoint(LastSplineIndex, SplinePoint.Position, ESplineCoordinateSpace::World, true);
 	UpdateSplineComponent();
 }
 

@@ -17,7 +17,8 @@
 #include "OutOfSpaceToRun/Actors/Zones/ShrinkingSphere.h"
 #include "OutOfSpaceToRun/Actors/Controllers/BikePlayerController.h"
 
-#include "OutOfSpaceToRun/Actors/Obstacles/SplineWall.h"
+//#include "OutOfSpaceToRun/Actors/Obstacles/SplineWall.h"
+#include "OutOfSpaceToRun/Actors/Obstacles/SplineActor.h"
 
 // Sets default values
 ABike::ABike()
@@ -93,20 +94,24 @@ void ABike::BeginPlay()
 
 void ABike::SpawnUpdateWall(bool IsNewPoint /*= false*/)
 {
-	/*auto Location = MainChassis->GetComponentLocation();
+	auto Location = MainChassis->GetComponentLocation();
 	const auto Rotation = MainChassis->GetComponentRotation();
 	FVector PositionOffset = MainChassis->GetForwardVector() * -150.f;
 	Location = Location + PositionOffset;
 
 	if (!DynamicWallInstance)
 	{
-		DynamicWallInstance = GetWorld()->SpawnActor<ASplineWall>(WallToSpawn, Location, Rotation);
+		DynamicWallInstance = GetWorld()->SpawnActor<ASplineActor>(WallToSpawn, Location, Rotation);
 	}
-	FTransform Transform = GetTransform();
-	
-	Transform.SetLocation(Location);
 
-	DynamicWallInstance->UpdateSplineMeshes(Transform, IsNewPoint);*/
+	if (IsNewPoint)
+	{
+		DynamicWallInstance->AddSplinePoint(Location);
+	}
+	else
+	{
+		DynamicWallInstance->UpdateLastSplinePoint(Location);
+	}
 }
 
 // Turns vehicle by 90 degrees
@@ -140,7 +145,20 @@ void ABike::Pivot(const FInputActionValue& Value)
 	if (!MovementComponent->IsMovingOnGround())
 		return;
 
-	SpawnUpdateWall(true);
+	FVector CurrentPosition = GetActorLocation();
+	float DistanceDelta = FVector::Dist(PreviousPosition, CurrentPosition);
+	
+	if (DistanceDelta >= SpawnWallDistanceThreshold)
+	{
+		// Spawn new point when threshold exceeded
+		SpawnUpdateWall(true);
+	}
+	else
+	{
+		// Just update point
+		SpawnUpdateWall(false);
+	}
+
 
 	float Val = Value.Get<float>();
 
@@ -248,7 +266,7 @@ void ABike::StopJumping()
 
 void ABike::OnBoxBeginOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	ASplineWall* Wall = Cast<ASplineWall>(OtherActor);
+	ASplineActor* Wall = Cast<ASplineActor>(OtherActor);
 	if (Wall)
 	{
 		MovementComponent->StopMovementImmediately();
