@@ -91,13 +91,17 @@ void ABike::BeginPlay()
 
 	SpawnUpdateWall();
 }
+#pragma optimize("", off)
 
 void ABike::SpawnUpdateWall(bool IsNewPoint /*= false*/)
 {
 	auto Location = MainChassis->GetComponentLocation();
 	const auto Rotation = MainChassis->GetComponentRotation();
-	FVector PositionOffset = MainChassis->GetForwardVector() * -150.f;
+	FVector PositionOffset = MainChassis->GetForwardVector() * -200.f;
 	Location = Location + PositionOffset;
+	
+	// TODO_Spline: Find better way to track previous position to draw wall in proper place, without clipping Bike
+	//Location = PreviousPosition;
 
 	if (!DynamicWallInstance)
 	{
@@ -113,6 +117,8 @@ void ABike::SpawnUpdateWall(bool IsNewPoint /*= false*/)
 		DynamicWallInstance->UpdateLastSplinePoint(Location);
 	}
 }
+#pragma optimize("", on)
+
 
 // Turns vehicle by 90 degrees
 void ABike::Turn(const FInputActionValue& Value)
@@ -137,7 +143,21 @@ void ABike::Turn(const FInputActionValue& Value)
 	MainChassis->SetWorldRotation(NewRotation);
 }
 
-void ABike::Pivot(const FInputActionValue& Value)
+void ABike::StartPivot(const FInputActionValue& Value)
+{
+	if (!IsAlive)
+		return;
+
+	if (!MovementComponent->IsMovingOnGround())
+		return;
+
+	
+	SpawnUpdateWall(true);
+
+	Pivot(Value);
+}
+
+void ABike::ContinuePivot(const FInputActionValue& Value)
 {
 	if (!IsAlive)
 		return;
@@ -146,12 +166,13 @@ void ABike::Pivot(const FInputActionValue& Value)
 		return;
 
 	FVector CurrentPosition = GetActorLocation();
-	float DistanceDelta = FVector::Dist(PreviousPosition, CurrentPosition);
-	
-	if (DistanceDelta >= SpawnWallDistanceThreshold)
+	float Distance = FVector::Dist(PreviousPosition, CurrentPosition);
+	DistanceTravelled += Distance;
+	if (DistanceTravelled >= SpawnWallDistanceThreshold)
 	{
 		// Spawn new point when threshold exceeded
 		SpawnUpdateWall(true);
+		DistanceTravelled = 0;
 	}
 	else
 	{
@@ -159,21 +180,37 @@ void ABike::Pivot(const FInputActionValue& Value)
 		SpawnUpdateWall(false);
 	}
 
+	Pivot(Value);
+}
 
+void ABike::StopPivot(const FInputActionValue& Value)
+{
+	if (!IsAlive)
+		return;
+
+	if (!MovementComponent->IsMovingOnGround())
+		return;
+	SpawnUpdateWall(true);
+
+	Pivot(Value);
+}
+
+void ABike::Pivot(const FInputActionValue& Value)
+{
 	float Val = Value.Get<float>();
 
 	auto MainChassisRelativeRotation = MainChassis->GetRelativeRotation();
 
 	float NewPivot = MainChassisRelativeRotation.Yaw + Val * PanSpeed;
 	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Pivot: %f"), NewPivot));
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Start Pivot: %f"), NewPivot));
 
 	FRotator NewRotation(MainChassisRelativeRotation.Pitch, NewPivot, MainChassisRelativeRotation.Roll);
 
 	MainChassis->SetRelativeRotation(NewRotation);
 
 	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Pivot"));
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Start Pivot"));
 }
 
 void ABike::ConstantForwardMovement()
@@ -304,17 +341,14 @@ void ABike::Tick(float DeltaTime)
 		// Spawn a wall if current distance travelled threshold is exceeded, then reset threshold
 		float Distance = FVector::Dist(PreviousPosition, CurrentPosition);
 		DistanceTravelled += Distance;
-		if (DistanceTravelled >= SpawnWallDistanceThreshold)
+		SpawnUpdateWall(false); //updates point position in spline
+		if (!MovementComponent->IsMovingOnGround())
 		{
-			if (!MovementComponent->IsMovingOnGround())
+			if (DistanceTravelled >= SpawnWallDistanceThreshold)
 			{
 				SpawnUpdateWall(true);
+				DistanceTravelled = 0.0f;
 			}
-			else
-			{
-				SpawnUpdateWall(false);
-			}
-			DistanceTravelled = 0.0f;
 		}
 
 		PreviousPosition = CurrentPosition;
@@ -361,7 +395,9 @@ void ABike::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		EnhancedInputComponent->BindAction(TurnAction, ETriggerEvent::Started, this, &ABike::Turn);
 
 		// Pivoting, this gives ability to swerve, not just simply turn by 90 degrees
-		EnhancedInputComponent->BindAction(PivotAction, ETriggerEvent::Triggered, this, &ABike::Pivot);
+		EnhancedInputComponent->BindAction(PivotAction, ETriggerEvent::Started, this, &ABike::StartPivot);
+		EnhancedInputComponent->BindAction(PivotAction, ETriggerEvent::Triggered, this, &ABike::ContinuePivot);
+		EnhancedInputComponent->BindAction(PivotAction, ETriggerEvent::Completed, this, &ABike::StopPivot);
 	}
 }
 

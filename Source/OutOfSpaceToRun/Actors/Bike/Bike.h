@@ -158,8 +158,17 @@ protected:
 	/** Called for turn input */
 	UFUNCTION(BlueprintCallable)
 	void Turn(const FInputActionValue& Value);
+
 	/** Called for pivot input */
 	UFUNCTION(BlueprintCallable)
+	void StartPivot(const FInputActionValue& Value);
+	/** Called for pivot input */
+	UFUNCTION(BlueprintCallable)
+	void ContinuePivot(const FInputActionValue& Value);
+	/** Called for pivot input */
+	UFUNCTION(BlueprintCallable)
+	void StopPivot(const FInputActionValue& Value);
+
 	void Pivot(const FInputActionValue& Value);
 
 	void ConstantForwardMovement();

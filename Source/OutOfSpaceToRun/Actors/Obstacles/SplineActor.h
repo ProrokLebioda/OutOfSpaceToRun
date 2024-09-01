@@ -20,6 +20,7 @@ public:
 	void OnConstruction(const FTransform& Transform) override;
 
 	void UpdateSplineComponent();
+	void UpdateLastSplineComponent();
 
 protected:
 	// Called when the game starts or when spawned

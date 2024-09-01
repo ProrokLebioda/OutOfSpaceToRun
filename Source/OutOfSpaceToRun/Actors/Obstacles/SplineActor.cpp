@@ -23,11 +23,11 @@ void ASplineActor::OnConstruction(const FTransform& Transform)
 
 void ASplineActor::UpdateSplineComponent()
 {
-	for (USplineMeshComponent* SplineMesh2 : SplineMeshesArray)
+	for (USplineMeshComponent* SplineMesh : SplineMeshesArray)
 	{
-		if (SplineMesh2)
+		if (SplineMesh)
 		{
-			SplineMesh2->DestroyComponent();
+			SplineMesh->DestroyComponent();
 		}
 	}
 
@@ -60,7 +60,6 @@ void ASplineActor::UpdateSplineComponent()
 		SplineMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
 		SplineMeshComponent->SetForwardAxis(ForwardAxis);
-		
 
 		// TODO_Spline: Uncomment when need for 2 material arises
 		//if (AlternativeMaterial && SplineCount > 0 && SplineCount % 2 == 0)
@@ -71,6 +70,43 @@ void ASplineActor::UpdateSplineComponent()
 		//{
 		//	SplineMeshComponent->SetMaterial(0, DefaultMaterial);
 		//}
+
+		if (AlternativeMaterial)
+		{
+			SplineMeshComponent->SetMaterial(0, AlternativeMaterial);
+		}
+	}
+}
+
+void ASplineActor::UpdateLastSplineComponent()
+{
+	for (int SplineCount = (SplineComponent->GetNumberOfSplinePoints() - 2); SplineCount < (SplineComponent->GetNumberOfSplinePoints()) - 1; SplineCount++)
+	{
+		//USplineMeshComponent* SplineMeshComponent = NewObject<USplineMeshComponent>(this, USplineMeshComponent::StaticClass());
+
+		USplineMeshComponent* LastSplineMeshComponent = SplineMeshesArray.Last();
+
+		const FVector StartPoint = SplineComponent->GetLocationAtSplinePoint(SplineCount, ESplineCoordinateSpace::Local);
+		const FVector StartTangent = SplineComponent->GetTangentAtSplinePoint(SplineCount, ESplineCoordinateSpace::Local);
+		const FVector EndPoint = SplineComponent->GetLocationAtSplinePoint(SplineCount + 1, ESplineCoordinateSpace::Local);
+		const FVector EndTangent = SplineComponent->GetTangentAtSplinePoint(SplineCount + 1, ESplineCoordinateSpace::Local);
+
+		LastSplineMeshComponent->SetStartAndEnd(StartPoint, StartTangent, EndPoint, EndTangent, true);
+		// TODO_Spline: Uncomment when need for 2 material arises
+		//if (AlternativeMaterial && SplineCount > 0 && SplineCount % 2 == 0)
+		//{
+		//	SplineMeshComponent->SetMaterial(0, AlternativeMaterial);
+		//}
+		//else if (DefaultMaterial)
+		//{
+		//	SplineMeshComponent->SetMaterial(0, DefaultMaterial);
+		//}
+
+
+		if (AlternativeMaterial)
+		{
+			LastSplineMeshComponent->SetMaterial(0, AlternativeMaterial);
+		}
 	}
 }
 
@@ -103,6 +139,7 @@ void ASplineActor::UpdateLastSplinePoint(const FVector& Location)
 
 	SplinePoint.Position = Location;
 	SplineComponent->SetLocationAtSplinePoint(LastSplineIndex, SplinePoint.Position, ESplineCoordinateSpace::World, true);
-	UpdateSplineComponent();
+	//UpdateSplineComponent();
+	UpdateLastSplineComponent();
 }
 
