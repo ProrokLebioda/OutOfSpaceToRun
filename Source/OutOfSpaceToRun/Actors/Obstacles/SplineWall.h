@@ -25,7 +25,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	//virtual void OnConstruction(const FTransform& Transform) override;
+	virtual void OnConstruction(const FTransform& Transform) override;
 
 	/*UFUNCTION(BlueprintCallable)
 	void Init();*/
@@ -38,10 +38,18 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
-	void UpdateSplinePoint(const FTransform& Transform, bool IsNewPoint);
+	void UpdateSplineMeshes();
+
+	void AddSplinePoint(const FVector& Location);
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	USplineMeshComponent* SplineMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	TArray<USplineMeshComponent*> SplineMeshesArray;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SplineMesh")
+	USplineMeshComponent* SplineMeshClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	USceneComponent* TopScene;

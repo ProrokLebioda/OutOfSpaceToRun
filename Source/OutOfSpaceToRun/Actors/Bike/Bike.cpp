@@ -93,7 +93,7 @@ void ABike::BeginPlay()
 
 void ABike::SpawnUpdateWall(bool IsNewPoint /*= false*/)
 {
-	auto Location = MainChassis->GetComponentLocation();
+	/*auto Location = MainChassis->GetComponentLocation();
 	const auto Rotation = MainChassis->GetComponentRotation();
 	FVector PositionOffset = MainChassis->GetForwardVector() * -150.f;
 	Location = Location + PositionOffset;
@@ -104,13 +104,9 @@ void ABike::SpawnUpdateWall(bool IsNewPoint /*= false*/)
 	}
 	FTransform Transform = GetTransform();
 	
-
-
-
 	Transform.SetLocation(Location);
 
-	DynamicWallInstance->UpdateSplinePoint(Transform, IsNewPoint);
-
+	DynamicWallInstance->UpdateSplineMeshes(Transform, IsNewPoint);*/
 }
 
 // Turns vehicle by 90 degrees
